@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"kmwenja/mangaeden"
+	"github.com/kmwenja/mangaeden"
 )
 
 func main() {

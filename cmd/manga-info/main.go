@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"kmwenja/mangaeden"
+	"github.com/kmwenja/mangaeden"
 )
 
 func main() {
