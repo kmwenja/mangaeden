@@ -13,8 +13,8 @@ func main() {
 		return
 	}
 
-	c := mangaeden.New()
-	is, err := c.GetChapterImages(os.Args[1])
+	c := mangaeden.New(nil)
+	is, err := c.Chapter(os.Args[1])
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return

@@ -28,7 +28,7 @@ func main() {
 		return
 	}
 
-	c := mangaeden.New()
+	c := mangaeden.New(nil)
 	if page != -1 {
 		var mp mangaeden.MangaPage
 		var err error

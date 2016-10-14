@@ -2,8 +2,6 @@ package mangaeden
 
 import (
 	"encoding/json"
-	"fmt"
-	"net/http"
 	"time"
 )
 
@@ -40,21 +38,4 @@ func (mi *MangaInfo) UnmarshalJSON(data []byte) error {
 	mi.ImageURLFragment = aux.ImageURLFragment
 	mi.LastChapterDate = time.Unix(int64(aux.LastChapterDate), 0)
 	return nil
-}
-
-func (c *Client) GetInfo(id string) (MangaInfo, error) {
-	url := fmt.Sprintf(DEFAULT_API_URL+"manga/%s/", id)
-	client := &http.Client{}
-	resp, err := client.Get(url)
-	if err != nil {
-		return MangaInfo{}, err
-	}
-	defer resp.Body.Close()
-	var info MangaInfo
-	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&info)
-	if err != nil {
-		return MangaInfo{}, err
-	}
-	return info, nil
 }

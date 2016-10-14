@@ -19,7 +19,11 @@ func (c *Chapter) UnmarshalJSON(data []byte) error {
 	}
 	c.Index = int(aux[0].(float64))
 	c.Date = time.Unix(int64(aux[1].(float64)), 0)
-	c.Title = aux[2].(string)
+	if aux[2] == nil {
+		c.Title = ""
+	} else {
+		c.Title = aux[2].(string)
+	}
 	c.ID = aux[3].(string)
 	return nil
 }
