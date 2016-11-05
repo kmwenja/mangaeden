@@ -1,21 +1,32 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
+	"time"
 
 	"github.com/kmwenja/mangaeden"
 )
 
 func main() {
-	if len(os.Args) < 2 {
+	start := time.Now()
+
+	var parallel, startChapter, endChapter int
+	flag.IntVar(&parallel, "parallel", 10, "how many parallel tasks")
+	flag.IntVar(&startChapter, "start", -1, "from this chapter")
+	flag.IntVar(&endChapter, "end", -1, "upto this chapter(inclusive)")
+	flag.Parse()
+
+	if len(flag.Args()) < 1 {
 		fmt.Printf("Usage: %s <manga id>\n", os.Args[0])
 		return
 	}
 
-	id := os.Args[1]
+	id := flag.Arg(0)
 	c := mangaeden.New(nil)
 
 	m, err := c.Manga(id)
@@ -55,11 +66,27 @@ func main() {
 				}
 			}
 		}
-		chapters[key] = ch
+		add := true
+		if startChapter != -1 {
+			if ch.Index < startChapter {
+				add = false
+			}
+		}
+
+		if endChapter != -1 {
+			if ch.Index > endChapter {
+				add = false
+			}
+		}
+
+		if add {
+			chapters[key] = ch
+		}
 	}
 
 	// for each chapter
 	for k, ch := range chapters {
+		cStart := time.Now()
 		// make directory of chapter using chapter.Index
 		chDir := filepath.Join(dir, k)
 
@@ -92,19 +119,29 @@ func main() {
 			images[key] = im
 		}
 
+		var wg sync.WaitGroup
+		wg.Add(len(images))
+		sem := make(chan int, parallel)
+
 		for ik, im := range images {
-			// download each image and save to chapterimage.Index
-			p := filepath.Join(chDir, ik)
-			err = download(c, im.Image, p)
-			if err != nil {
-				perror(err)
-				continue
-			}
+			go func(ik string, im mangaeden.ChapterImage) {
+				defer func() { <-sem }()
+				defer wg.Done()
+				sem <- 1
+				// download each image and save to chapterimage.Index
+				p := filepath.Join(chDir, ik)
+				err = download(c, im.Image, p)
+				if err != nil {
+					perror(err)
+				}
+			}(ik, im)
 		}
 
-		fmt.Printf("Downloaded chapter %d, %d images\n", ch.Index, len(ims))
+		wg.Wait()
+
+		fmt.Printf("Downloaded chapter %d, %d images: %s\n", ch.Index, len(ims), time.Since(cStart))
 	}
-	fmt.Printf("Done\n")
+	fmt.Printf("Done: %s\n", time.Since(start))
 }
 
 func perror(e error) {
