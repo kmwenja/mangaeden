@@ -6,11 +6,24 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"github.com/kmwenja/mangaeden"
 )
+
+type ChapterImageResult struct {
+	Key       string
+	Index     int
+	TimeTaken time.Duration
+	Err       error
+}
+
+type ChapterResult struct {
+	Key       string
+	Index     int
+	TimeTaken time.Duration
+	Err       error
+}
 
 func main() {
 	start := time.Now()
@@ -84,63 +97,95 @@ func main() {
 		}
 	}
 
+	sem := make(chan int, parallel)
+	chResult := make(chan ChapterResult, len(chapters))
+
 	// for each chapter
 	for k, ch := range chapters {
-		cStart := time.Now()
-		// make directory of chapter using chapter.Index
-		chDir := filepath.Join(dir, k)
+		go func(k string, ch mangaeden.Chapter) {
+			cStart := time.Now()
+			// make directory of chapter using chapter.Index
+			chDir := filepath.Join(dir, k)
 
-		err = mkdir(chDir)
-		if err != nil {
-			perror(err)
-			continue
-		}
+			err = mkdir(chDir)
+			if err != nil {
+				perror(err)
+				return
+			}
 
-		// get chapter images
-		ims, err := c.Chapter(ch.ID)
-		if err != nil {
-			perror(err)
-			continue
-		}
+			// get chapter images
+			ims, err := c.Chapter(ch.ID)
+			if err != nil {
+				perror(err)
+				return
+			}
 
-		// get accurate image history in case of repeating indices
-		images := make(map[string]mangaeden.ChapterImage)
-		for _, im := range ims {
-			key := fmt.Sprintf("%d", im.Index)
-			if _, present := images[key]; present {
-				for i := 1; i < 100; i++ {
-					newKey := fmt.Sprintf("%s_%d", key, i)
-					if _, present := images[newKey]; present == false {
-						key = newKey
-						break
+			// get accurate image history in case of repeating indices
+			images := make(map[string]mangaeden.ChapterImage)
+			for _, im := range ims {
+				key := fmt.Sprintf("%d", im.Index)
+				if _, present := images[key]; present {
+					for i := 1; i < 100; i++ {
+						newKey := fmt.Sprintf("%s_%d", key, i)
+						if _, present := images[newKey]; present == false {
+							key = newKey
+							break
+						}
 					}
 				}
+				images[key] = im
 			}
-			images[key] = im
-		}
 
-		var wg sync.WaitGroup
-		wg.Add(len(images))
-		sem := make(chan int, parallel)
+			ciResult := make(chan ChapterImageResult, len(images))
 
-		for ik, im := range images {
-			go func(ik string, im mangaeden.ChapterImage) {
-				defer func() { <-sem }()
-				defer wg.Done()
-				sem <- 1
-				// download each image and save to chapterimage.Index
-				p := filepath.Join(chDir, ik)
-				err = download(c, im.Image, p)
-				if err != nil {
-					perror(err)
+			for ik, im := range images {
+				go func(ik string, im mangaeden.ChapterImage) {
+					defer func() { <-sem }()
+					imageStart := time.Now()
+					sem <- 1
+					// download each image and save to chapterimage.Index
+					p := filepath.Join(chDir, ik)
+					err = download(c, im.Image, p)
+					if err != nil {
+						perror(err)
+					}
+					duration := time.Since(imageStart)
+					ciResult <- ChapterImageResult{
+						Key:       ik,
+						Index:     im.Index,
+						TimeTaken: duration,
+						Err:       err,
+					}
+				}(ik, im)
+			}
+
+			var ok int
+			for _, _ = range images {
+				cir := <-ciResult
+				if cir.Err != nil {
+					continue
 				}
-			}(ik, im)
-		}
+				ok += 1
+			}
+			close(ciResult)
 
-		wg.Wait()
-
-		fmt.Printf("Downloaded chapter %d, %d images: %s\n", ch.Index, len(ims), time.Since(cStart))
+			duration := time.Since(cStart)
+			chResult <- ChapterResult{
+				Key:       k,
+				Index:     ch.Index,
+				TimeTaken: duration,
+				Err:       nil,
+			}
+			fmt.Printf("Downloaded chapter %d, %d/%d images: %s\n", ch.Index, ok, len(images), duration)
+		}(k, ch)
 	}
+
+	for _, _ = range chapters {
+		<-chResult
+	}
+	close(chResult)
+
+	close(sem)
 	fmt.Printf("Done: %s\n", time.Since(start))
 }
 
