@@ -8,7 +8,8 @@ Mangaeden
 Install
 -------
 
-`go install github.com/kmwenja/mangaeden/cmd/`
+1. `go get -v github.com/kmwenja/mangaeden/cmd/mangaeden/`
+2. `go install github.com/kmwenja/mangaeden/cmd/mangaeden/`
 
 Usage
 -----
@@ -29,14 +30,20 @@ Usage
 
 `mangaeden download [manga id]`
 
+Dependencies
+------------
+
+- go
+- make
+
 Hacking
 -------
 
-1. Get the code: `go get -v github.com/kmwenja/mangaeden`
+1. Get the code: `go get -v github.com/kmwenja/mangaeden/cmd/mangaeden/`
 2. Cd into the folder: `cd $GOPATH/src/github.com/kmwenja/mangaeden/`
 3. Hack hack hack.
-4. Build binary: `cd cmd && go build -o mangaeden`
+4. Build binary: `make`
+5. Run the binary: `bin/mangaeden`
 
 `github.com/kmwenja/mangaeden` has the client and supporting structs.
-
-`github.com/kmwenja/mangaeden/cmd` has the cli code, built with [Cobra](https://github.com/spf13/cobra).
+`github.com/kmwenja/mangaeden/cmd/mangaeden/` has the cli code, built with [Cobra](https://github.com/spf13/cobra).
