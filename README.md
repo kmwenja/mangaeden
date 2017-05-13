@@ -1,9 +1,9 @@
 Mangaeden
 =========
 
-**mangaeden** is a simple lookup and download cli client for mangaeden.com API in Go.
+**mangaeden** is a simple lookup and download cli client for the [mangaeden.com API](www.mangaeden.com/api/) in Go.
 
-*This is a project to practice writing Go.*
+Make sure to checkout [Mangaeden](www.mangaeden.com). All manga content belongs to them.
 
 Install
 -------
@@ -47,3 +47,8 @@ Hacking
 
 `github.com/kmwenja/mangaeden` has the client and supporting structs.
 `github.com/kmwenja/mangaeden/cmd/mangaeden/` has the cli code, built with [Cobra](https://github.com/spf13/cobra).
+
+License
+-------
+
+MIT
