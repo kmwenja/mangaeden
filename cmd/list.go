@@ -1,22 +1,32 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 
 	"github.com/kmwenja/mangaeden"
+	"github.com/spf13/cobra"
 )
 
-func main() {
+func ListCmd() *cobra.Command {
 	var page, size int
 	var language string
 
-	flag.IntVar(&page, "page", -1, "page to retrieve from")
-	flag.IntVar(&size, "size", -1, "page size, must be between 25 and 1500")
-	flag.StringVar(&language, "language", "english", "API language: choose between `english` and `italian`")
+	var cmd = &cobra.Command{
+		Use:   "list",
+		Short: "Print out a list of all manga",
+		Run: func(ccmd *cobra.Command, args []string) {
+			list(page, size, language)
+		},
+	}
 
-	flag.Parse()
+	cmd.Flags().IntVarP(&page, "page", "p", -1, "page to retrieve from")
+	cmd.Flags().IntVarP(&size, "size", "s", -1, "page size, must be between 25 and 1500")
+	cmd.Flags().StringVarP(&language, "language", "l", "english", "API language: choose between `english` and `italian`")
 
+	return cmd
+}
+
+func list(page int, size int, language string) {
 	var lang int
 	switch language {
 	case "english":

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kmwenja/mangaeden"
+	"github.com/spf13/cobra"
 )
 
 type ChapterImageResult struct {
@@ -25,21 +25,33 @@ type ChapterResult struct {
 	Err       error
 }
 
-func main() {
-	start := time.Now()
+func DownloadCmd() *cobra.Command {
+	var workers, start, end int
 
-	var parallel, startChapter, endChapter int
-	flag.IntVar(&parallel, "parallel", 10, "how many parallel tasks")
-	flag.IntVar(&startChapter, "start", -1, "from this chapter")
-	flag.IntVar(&endChapter, "end", -1, "upto this chapter(inclusive)")
-	flag.Parse()
+	var cmd = &cobra.Command{
+		Use:   "download [manga id]",
+		Short: "Download a manga",
+		Run: func(ccmd *cobra.Command, args []string) {
+			if len(args) < 1 {
+				ccmd.HelpFunc()(ccmd, args)
+				os.Exit(1)
+			}
 
-	if len(flag.Args()) < 1 {
-		fmt.Printf("Usage: %s <manga id>\n", os.Args[0])
-		return
+			download(workers, start, end, args)
+		},
 	}
 
-	id := flag.Arg(0)
+	cmd.Flags().IntVarP(&workers, "workers", "w", 10, "number of download workers")
+	cmd.Flags().IntVarP(&start, "start", "s", -1, "start downloading this chapter")
+	cmd.Flags().IntVarP(&end, "end", "e", -1, "stop downloading upto this chapter(inclusive)")
+
+	return cmd
+}
+
+func download(workers int, startChapter int, endChapter int, args []string) {
+	start := time.Now()
+
+	id := args[0]
 	c := mangaeden.New(nil)
 
 	m, err := c.Manga(id)
@@ -56,7 +68,7 @@ func main() {
 		return
 	}
 	// download image and put in directory
-	err = download(c, m.Image, filepath.Join(dir, m.Title))
+	err = dl(c, m.Image, filepath.Join(dir, m.Title))
 	if err != nil {
 		perror(err)
 		return
@@ -97,7 +109,7 @@ func main() {
 		}
 	}
 
-	sem := make(chan int, parallel)
+	sem := make(chan int, workers)
 	chResult := make(chan ChapterResult, len(chapters))
 
 	// for each chapter
@@ -145,7 +157,7 @@ func main() {
 					sem <- 1
 					// download each image and save to chapterimage.Index
 					p := filepath.Join(chDir, ik)
-					err = download(c, im.Image, p)
+					err = dl(c, im.Image, p)
 					if err != nil {
 						perror(err)
 					}
@@ -206,7 +218,7 @@ func mkdir(p string) error {
 	return nil
 }
 
-func download(c *mangaeden.Client, i mangaeden.Image, p string) error {
+func dl(c *mangaeden.Client, i mangaeden.Image, p string) error {
 	fp := fmt.Sprintf("%s%s", p, i.Ext())
 	if _, err := os.Stat(fp); err == nil {
 		return nil

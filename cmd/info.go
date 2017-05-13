@@ -1,24 +1,36 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
 	"github.com/kmwenja/mangaeden"
+	"github.com/spf13/cobra"
 )
 
-func main() {
+func InfoCmd() *cobra.Command {
 	var verbose bool
-	flag.BoolVar(&verbose, "verbose", false, "show a lot")
-	flag.Parse()
 
-	if len(flag.Args()) < 1 {
-		fmt.Printf("Usage: %s [manga id]\n", os.Args[0])
-		return
+	var cmd = &cobra.Command{
+		Use:   "info [manga id]",
+		Short: "Print all the relevant info of the manga id provided",
+		Run: func(ccmd *cobra.Command, args []string) {
+			if len(args) < 1 {
+				ccmd.HelpFunc()(ccmd, args)
+				os.Exit(1)
+			}
+
+			info(verbose, args)
+		},
 	}
 
-	id := flag.Arg(0)
+	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "show a lot more")
+
+	return cmd
+}
+
+func info(verbose bool, args []string) {
+	id := args[0]
 
 	c := mangaeden.New(nil)
 	mi, err := c.Manga(id)
