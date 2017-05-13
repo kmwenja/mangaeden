@@ -9,8 +9,6 @@ import (
 )
 
 func InfoCmd() *cobra.Command {
-	var verbose bool
-
 	var cmd = &cobra.Command{
 		Use:   "info [manga id]",
 		Short: "Print all the relevant info of the manga id provided",
@@ -20,16 +18,14 @@ func InfoCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			info(verbose, args)
+			info(args)
 		},
 	}
-
-	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "show a lot more")
 
 	return cmd
 }
 
-func info(verbose bool, args []string) {
+func info(args []string) {
 	id := args[0]
 
 	c := mangaeden.New(nil)
@@ -39,13 +35,15 @@ func info(verbose bool, args []string) {
 		return
 	}
 
-	if verbose {
-		fmt.Printf("Info: %v\n", mi)
-		fmt.Printf("Image: %s\n", mi.ImageUrl())
-	} else {
-		fmt.Printf("Title: %s\n", mi.Title)
-		fmt.Printf("Description: %s\n", mi.Description)
-		fmt.Printf("No of chapters: %d\n", len(mi.Chapters))
-		fmt.Printf("Completed: %d\n", mi.Status)
-	}
+	fmt.Printf("ID: %s\n", id)
+	fmt.Printf("Title: %s\n", mi.Title)
+	fmt.Printf("Artist: %s\n", mi.Artist)
+	fmt.Printf("Author: %s\n", mi.Author)
+	fmt.Printf("Description: %s\n", mi.Description())
+	fmt.Printf("Categories: %s\n", mi.Categories())
+	fmt.Printf("No of chapters: %d\n", len(mi.Chapters))
+	fmt.Printf("Status: %s\n", mi.Status())
+	fmt.Printf("Last Chapter Date: %s\n", mi.LastChapterDate)
+	fmt.Printf("Language: %s\n", mi.Language())
+	fmt.Printf("Hits: %d\n", mi.Hits)
 }

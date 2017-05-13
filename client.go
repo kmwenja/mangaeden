@@ -16,6 +16,17 @@ const (
 	STATUS_ONGOING   = 1
 )
 
+func completeString(status int) string {
+	switch status {
+	case STATUS_COMPLETED:
+		return "Completed"
+	case STATUS_ONGOING:
+		return "Ongoing"
+	default:
+		return "Unknown"
+	}
+}
+
 type Client struct {
 	client *http.Client
 }
