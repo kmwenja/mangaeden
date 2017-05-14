@@ -30,7 +30,7 @@ func DownloadCmd() *cobra.Command {
 
 	var cmd = &cobra.Command{
 		Use:   "download [manga id]",
-		Short: "Download a manga",
+		Short: "Download the manga with the id provided",
 		Run: func(ccmd *cobra.Command, args []string) {
 			if len(args) < 1 {
 				ccmd.HelpFunc()(ccmd, args)
